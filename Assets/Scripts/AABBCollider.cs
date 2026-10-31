@@ -1,11 +1,9 @@
-using System;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 
 public class AABBCollider : MonoBehaviour
 {
-    [SerializeField] private float _length;
-    [SerializeField] private float _width;
+    [SerializeField] private float _length = 1f;
+    [SerializeField] private float _width = 1f;
 
     public Vector2 max { get; private set; }
     public Vector2 min { get; private set; }
@@ -13,39 +11,23 @@ public class AABBCollider : MonoBehaviour
     private void Start()
     {
         if (CollisionManager.Instance != null)
-        {
-            CollisionManager.Instance.Register(this);
-        }
+            CollisionManager.Instance.RegisterGround(this);
     }
     
     private void OnDestroy()
     {
         if (CollisionManager.Instance != null)
-        {
-            CollisionManager.Instance.Unregister(this);
-        }
+            CollisionManager.Instance.UnregisterGround(this);
     }
-
 
     private void Update()
     {
-        var posX = this.transform.position.x + _width * .5f;
-        var posY = this.transform.position.y + _length * .5f;
-        
-        var negX = this.transform.position.x - _width * .5f;
-        var negY = this.transform.position.y - _length * .5f;
+        var posX = transform.position.x + _width * .5f;
+        var posY = transform.position.y + _length * .5f;
+        var negX = transform.position.x - _width * .5f;
+        var negY = transform.position.y - _length * .5f;
 
         max = new Vector2(posX, posY);
         min = new Vector2(negX, negY);
-        
-        Debug.DrawLine(new Vector3(min.x, max.y), new Vector3(max.x, max.y), Color.yellow);
-        Debug.DrawLine(new Vector3(max.x, max.y), new Vector3(max.x, min.y), Color.yellow);
-        Debug.DrawLine(new Vector3(max.x, min.y), new Vector3(min.x, min.y), Color.yellow);
-        Debug.DrawLine(new Vector3(min.x, min.y), new Vector3(min.x, max.y), Color.yellow);
-    }
-
-    public void OnCollision(AABBCollider other)
-    {
-        Debug.Log($"Hit {other.name}");
     }
 }

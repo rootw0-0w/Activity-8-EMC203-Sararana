@@ -1,61 +1,53 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class CollisionManager : MonoBehaviour
 {
-    public static CollisionManager Instance => instance;
-    private static CollisionManager instance;
+    public static CollisionManager Instance { get; private set; }
 
-    private List<AABBCollider> colliders = new();
+    public PlayerCollider player { get; private set; }
+    private List<AABBCollider> grounds = new List<AABBCollider>();
+    private List<ObstacleCollider> obstacles = new List<ObstacleCollider>();
 
     private void Awake()
     {
-        if (instance == null)
-        {
-            instance = this;
-            DontDestroyOnLoad(this);
-        }
-        else
-        {
-            Destroy(this);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
-    public void Register(AABBCollider collider)
-    {
-        if (colliders.Contains(collider)) return;
-        colliders.Add(collider);
-    }
-    
-    public void Unregister(AABBCollider collider)
-    {
-        if (!colliders.Contains(collider)) return;
-        colliders.Remove(collider);
-    }
+    public void RegisterPlayer(PlayerCollider p) { player = p; }
+    public void UnregisterPlayer(PlayerCollider p) { if (player == p) player = null; }
+
+    public void RegisterGround(AABBCollider g) { if (!grounds.Contains(g)) grounds.Add(g); }
+    public void UnregisterGround(AABBCollider g) { if (grounds.Contains(g)) grounds.Remove(g); }
+
+    public void RegisterObstacle(ObstacleCollider o) { if (!obstacles.Contains(o)) obstacles.Add(o); }
+    public void UnregisterObstacle(ObstacleCollider o) { if (obstacles.Contains(o)) obstacles.Remove(o); }
 
     private void FixedUpdate()
     {
-        for (int i = 0; i < colliders.Count; i++)
+        if (player == null) return;
+
+        foreach (var ground in grounds) //repeat reading for several grounds
         {
-            var colliderA = colliders[i];
-            for (int j = 0; j < colliders.Count; j++)
+            if (Overlaps(player.min, player.max, ground.min, ground.max))
             {
-                if (i == j) continue;
-                var colliderB = colliders[j];
-                if (Overlaps(colliderA, colliderB))
-                {
-                    colliderA.OnCollision(colliderB);
-                    colliderB.OnCollision(colliderA);
-                }
+                player.OnGroundCollision(ground);
+            }
+        }
+
+        foreach (var obstacle in obstacles) //repeat reading for several colliders
+        {
+            if (Overlaps(player.min, player.max, obstacle.min, obstacle.max))
+            {
+                player.OnObstacleCollision(obstacle);
             }
         }
     }
     
-    bool Overlaps(AABBCollider a, AABBCollider b)
+    private bool Overlaps(Vector2 aMin, Vector2 aMax, Vector2 bMin, Vector2 bMax)
     {
-        return a.min.x <= b.max.x && b.min.x <= a.max.x &&
-               a.min.y <= b.max.y && b.min.y <= a.max.y;
+        return aMin.x <= bMax.x && bMin.x <= aMax.x &&
+               aMin.y <= bMax.y && bMin.y <= aMax.y;
     }
-
 }
